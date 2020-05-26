@@ -31,16 +31,21 @@ class NatureActivity : AppCompatActivity() {
         viewModel.viewState.observe(this, Observer { render(it) })
         viewModel.viewEffects.observe(this, Observer { onEffect(it) })
 
-        btn_search.setOnClickListener { viewModel.onEvent(NatureViewEvent.SearchPlantEvent(txt_search.text.toString())) }
+        btn_search.setOnClickListener {
+            viewModel.onEvent(
+                NatureViewEvent.SearchPlantEvent(
+                    txt_search.text.toString()
+                )
+            )
+        }
         btn_add_favorite.setOnClickListener { viewModel.onEvent(NatureViewEvent.AddPlantToFavoritesEvent) }
 
     }
 
     private fun onEffect(viewEffect: NatureViewEffect) {
-        if(viewEffect == null) return
-
         Timber.d("##viewEffect: $viewEffect")
-        when(viewEffect){
+
+        when (viewEffect) {
             is NatureViewEffect.AddedToFavoritesEffect -> {
                 Toast.makeText(this, "added to favorites", Toast.LENGTH_SHORT).show()
             }
@@ -54,25 +59,34 @@ class NatureActivity : AppCompatActivity() {
     }
 
     private fun render(viewState: NatureViewState) {
-        if(viewState == null) return
-
         Timber.d("##viewState: $viewState")
 
-        //TODO: maybe better not provide a viewState?
-        if(viewState.searchedPlantName != "") {
-            txt_search_result.text =
-                "${viewState.searchedPlantName} \n \n Maximum height: ${viewState.searchedPlantMaxHeight}"
-
-            //TODO: how to distinguish between drawable and url?
-            Glide.with(this)
-                .load(getDrawable(viewState.searchedImage!!.toInt()))
-                .placeholder(spinner)
-                .into(img_search_result)
+        txt_search_result.text = if (viewState.searchedPlantName != "") {
+            "${viewState.searchedPlantName} \n \n Maximum height: ${viewState.searchedPlantMaxHeight}m"
+        } else {
+            "No result found.."
         }
-    }
 
-    private fun createViewModel(): NatureViewModel {
-        //TODO: use a factory
-        return NatureViewModel(PlantRepository(mapOf(PLANT_NAME_SUNFLOWER to R.drawable.sunflower, PLANT_NAME_PALMTREE to R.drawable.palmtree)))
+        viewState.searchedImage
+            .takeIf { it.isNotBlank() }
+            ?.let {
+                //TODO: how to distinguish between drawable and url?
+                Glide.with(this)
+                    .load(getDrawable(viewState.searchedImage.toInt()))
+//                    .placeholder(spinner) shows the placeholder when the image is removed
+                    .into(img_search_result)
+            } ?: Glide.with(this).clear(img_search_result)
     }
+}
+
+private fun createViewModel(): NatureViewModel {
+    //TODO: use a factory
+    return NatureViewModel(
+        PlantRepository(
+            mapOf(
+                PLANT_NAME_SUNFLOWER to R.drawable.sunflower,
+                PLANT_NAME_PALMTREE to R.drawable.palmtree
+            )
+        )
+    )
 }

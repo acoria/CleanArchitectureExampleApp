@@ -6,11 +6,11 @@ import com.acoria.cleanarchtictureexampleapp.nature.model.Plant
 class PlantRepository(private val drawableHelper: Map<String, Int>) {
 
     suspend fun searchForPlant(plantName: String) : IPlant? {
-        //TODO
+        //TODO - proper repository and more, such as DTOs
         var foundPlant: IPlant? = null
         val height = when(plantName){
-            PLANT_NAME_SUNFLOWER ->  200
-            PLANT_NAME_PALMTREE -> 2000
+            PLANT_NAME_SUNFLOWER ->  2
+            PLANT_NAME_PALMTREE -> 20
             else -> 0
         }
         if(height != 0) {
@@ -18,6 +18,5 @@ class PlantRepository(private val drawableHelper: Map<String, Int>) {
         }
 //        delay(2000)
         return foundPlant
-//        return Plant("Sun Flower", 200)
     }
 }

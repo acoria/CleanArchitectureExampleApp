@@ -8,7 +8,7 @@ data class NatureViewState(
     val searchedPlantName: String = "",
     val searchedPlantMaxHeight: String = "",
     val searchedPlantReference: IPlant? = null,
-    val searchedImage: String? = null,
+    val searchedImage: String = "",
     val adapterList: List<IPlant> = emptyList()
 )
 
@@ -30,7 +30,7 @@ sealed class NatureViewEvent {
 }
 
 sealed class NatureResult {
-    data class SearchPlantResult(val plant: IPlant) : NatureResult()
+    data class SearchPlantResult(val plant: IPlant?) : NatureResult()
     data class AddToFavoriteListResult(val newFavoritePlant: IPlant?) : NatureResult()
     data class ToastResult(val toastMessage: String) : NatureResult()
 }

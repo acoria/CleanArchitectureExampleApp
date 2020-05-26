@@ -73,15 +73,10 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
 
         searchPlantJob = viewModelScope.launch {
             val foundPlant = plantRepo.searchForPlant(searchedPlantName)
-            //TODO: Error handling?
-//            Lce.Error()
-            if (foundPlant != null) {
-                val result: Lce<NatureResult> =
-                    Lce.Content(NatureResult.SearchPlantResult(foundPlant))
-                resultToViewState(result)
-            } else {
-                resultToViewEffect(Lce.Error(NatureResult.ToastResult("There is no result for '$searchedPlantName'")))
-            }
+//            if (foundPlant == null) {
+//                resultToViewEffect(Lce.Error(NatureResult.ToastResult("There is no result for '$searchedPlantName'")))
+//            }
+            resultToViewState(Lce.Content(NatureResult.SearchPlantResult(foundPlant)))
         }
     }
 
@@ -108,12 +103,22 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
                 when (result.content) {
                     is NatureResult.SearchPlantResult -> {
                         val plant = result.content.plant
-                        currentViewState.copy(
-                            searchedPlantName = plant.name,
-                            searchedPlantMaxHeight = plant.maxHeight.toString(),
-                            searchedPlantReference = plant,
-                            searchedImage = plant.imageUrl
-                        )
+                        if(plant != null) {
+                            currentViewState.copy(
+                                searchedPlantName = plant.name,
+                                searchedPlantMaxHeight = plant.maxHeight.toString(),
+                                searchedPlantReference = plant,
+                                searchedImage = plant.imageUrl
+                            )
+                        }else{
+                            currentViewState.copy(
+                                searchedPlantName = "",
+                                searchedPlantMaxHeight = "",
+                                searchedPlantReference = null,
+                                searchedImage = ""
+                            )
+                        }
+
                     }
                     is NatureResult.AddToFavoriteListResult -> {
                         result.content.newFavoritePlant
