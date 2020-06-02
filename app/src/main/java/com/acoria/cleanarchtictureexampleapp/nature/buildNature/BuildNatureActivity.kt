@@ -1,4 +1,4 @@
-package com.acoria.cleanarchtictureexampleapp.nature
+package com.acoria.cleanarchtictureexampleapp.nature.buildNature
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -6,13 +6,16 @@ import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.acoria.cleanarchtictureexampleapp.R
+import com.acoria.cleanarchtictureexampleapp.ViewModelFactory
+import com.acoria.cleanarchtictureexampleapp.nature.*
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.activity_main.*
 import timber.log.Timber
 
-class NatureActivity : AppCompatActivity() {
+class BuildNatureActivity : AppCompatActivity() {
 
-    lateinit var viewModel: NatureViewModel
+//    var viewModel by viewModels<BuildNatureViewModel>
+    private var viewModel = ViewModelFactory(ServiceLocator.createPlantRepository()).create(BuildNatureViewModel::class.java)
 
     private val spinner: CircularProgressDrawable by lazy {
         val circularProgressDrawable = CircularProgressDrawable(this)
@@ -26,7 +29,6 @@ class NatureActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        viewModel = createViewModel()
 
         viewModel.viewState.observe(this, Observer { render(it) })
         viewModel.viewEffects.observe(this, Observer { onEffect(it) })
@@ -77,16 +79,4 @@ class NatureActivity : AppCompatActivity() {
                     .into(img_search_result)
             } ?: Glide.with(this).clear(img_search_result)
     }
-}
-
-private fun createViewModel(): NatureViewModel {
-    //TODO: use a factory
-    return NatureViewModel(
-        PlantRepository(
-            mapOf(
-                PLANT_NAME_SUNFLOWER to R.drawable.sunflower,
-                PLANT_NAME_PALMTREE to R.drawable.palmtree
-            )
-        )
-    )
 }

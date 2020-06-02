@@ -1,16 +1,17 @@
-package com.acoria.cleanarchtictureexampleapp.nature
+package com.acoria.cleanarchtictureexampleapp.nature.buildNature
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.acoria.cleanarchtictureexampleapp.nature.*
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 
-class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
+class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
 
     //--View State--
     private var _viewStateLiveData = MutableLiveData<NatureViewState>()
@@ -20,7 +21,8 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
         get() = _viewStateLiveData
 
     //store view state so it can be easily copied
-    private var currentViewState = NatureViewState()
+    private var currentViewState =
+        NatureViewState()
         set(value) {
             field = value
             _viewStateLiveData.value = value
@@ -31,7 +33,7 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
     val viewEffects: LiveData<NatureViewEffect>
         get() = _viewEffectLiveData
 
-    private var searchPlantJob: Job? = null
+    private var searchPlantInRepoJob: Job? = null
 
 
     fun onEvent(event: NatureViewEvent) {
@@ -58,9 +60,17 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
 
         val result: Lce<NatureResult> = if (!adapterList.contains(plant)) {
             //hand over the result so it can be added
-            Lce.Content(NatureResult.AddToFavoriteListResult(plant))
+            Lce.Content(
+                NatureResult.AddToFavoriteListResult(
+                    plant
+                )
+            )
         } else {
-            Lce.Content(NatureResult.AddToFavoriteListResult(null))
+            Lce.Content(
+                NatureResult.AddToFavoriteListResult(
+                    null
+                )
+            )
         }
         resultToViewState(result)
         resultToViewEffect(result)
@@ -69,14 +79,20 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
     private fun onSearchPlant(searchedPlantName: String) {
         resultToViewState(Lce.Loading())
 
-        if (searchPlantJob?.isActive == true) searchPlantJob?.cancel()
+        if (searchPlantInRepoJob?.isActive == true) searchPlantInRepoJob?.cancel()
 
-        searchPlantJob = viewModelScope.launch {
+        searchPlantInRepoJob = viewModelScope.launch {
             val foundPlant = plantRepo.searchForPlant(searchedPlantName)
 //            if (foundPlant == null) {
 //                resultToViewEffect(Lce.Error(NatureResult.ToastResult("There is no result for '$searchedPlantName'")))
 //            }
-            resultToViewState(Lce.Content(NatureResult.SearchPlantResult(foundPlant)))
+            resultToViewState(
+                Lce.Content(
+                    NatureResult.SearchPlantResult(
+                        foundPlant
+                    )
+                )
+            )
         }
     }
 
@@ -88,10 +104,14 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
         Timber.d("##resultToEffect $result")
 
         if (result is Lce.Content && result.content is NatureResult.AddToFavoriteListResult) {
-            _viewEffectLiveData.value = NatureViewEffect.AddedToFavoritesEffect
+            _viewEffectLiveData.value =
+                NatureViewEffect.AddedToFavoritesEffect
         }
         if (result is Lce.Error && result.error is NatureResult.ToastResult) {
-            _viewEffectLiveData.value = NatureViewEffect.ShowToast(result.error.toastMessage)
+            _viewEffectLiveData.value =
+                NatureViewEffect.ShowToast(
+                    result.error.toastMessage
+                )
         }
     }
 
@@ -147,5 +167,12 @@ class NatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
 
     }
 
-
+    override fun onCleared() {
+        super.onCleared()
+        //watch out for leaks: https://medium.com/androiddevelopers/viewmodels-and-livedata-patterns-antipatterns-21efaef74a54
+        //drop any callbacks to the view model from components that exist in the entire application/are scoped to it
+        //e.g. a repository: If the repository is holding a reference to a callback in the ViewModel, the ViewModel will be temporarily leaked
+        //TODO: not sure if this is enough:
+        if (searchPlantInRepoJob?.isActive == true) searchPlantInRepoJob?.cancel()
+    }
 }

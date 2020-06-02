@@ -1,4 +1,4 @@
-package com.acoria.cleanarchtictureexampleapp.nature
+package com.acoria.cleanarchtictureexampleapp.nature.buildNature
 
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 
