@@ -7,27 +7,30 @@
 
     <EditText
         android:id="@+id/txt_search"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:tooltipText="Enter a plant name"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintEnd_toStartOf="@id/btn_search"
+        android:layout_margin="5dp"
+        android:tooltipText="Enter a plant name, e.g. Sunflower"
+        android:maxLines="1"/>
 
     <Button
         android:id="@+id/btn_search"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Search"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txt_search"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/txt_search"
+        app:layout_constraintBottom_toBottomOf="@id/txt_search"/>
     <Button
         android:id="@+id/btn_add_favorite"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Add to favorites"
-        android:layout_marginStart="10dp"
-        app:layout_constraintStart_toEndOf="@id/btn_search"
-        app:layout_constraintTop_toBottomOf="@id/txt_search"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_search" />
 
     <ImageView
         android:id="@+id/img_search_result"
@@ -37,7 +40,7 @@
         app:layout_constraintWidth_percent=".5"
         android:layout_height="wrap_content"
         android:padding="20dp"
-        app:layout_constraintTop_toBottomOf="@id/btn_search"
+        app:layout_constraintTop_toBottomOf="@id/btn_add_favorite"
         app:layout_constraintStart_toStartOf="parent"/>
     <TextView
         android:id="@+id/txt_search_result"
