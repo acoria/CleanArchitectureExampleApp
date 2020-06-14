@@ -22,13 +22,13 @@ class BuildNatureFragment : Fragment() {
 
     private val viewModel by viewModels<BuildNatureViewModel> { getViewModelFactory() }
 
-    private val spinner: CircularProgressDrawable by lazy {
-        val circularProgressDrawable = CircularProgressDrawable(requireContext())
-        circularProgressDrawable.strokeWidth = 5f
-        circularProgressDrawable.centerRadius = 30f
-        circularProgressDrawable.start()
-        circularProgressDrawable
-    }
+//    private val spinner: CircularProgressDrawable by lazy {
+//        val circularProgressDrawable = CircularProgressDrawable(requireContext())
+//        circularProgressDrawable.strokeWidth = 5f
+//        circularProgressDrawable.centerRadius = 30f
+//        circularProgressDrawable.start()
+//        circularProgressDrawable
+//    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

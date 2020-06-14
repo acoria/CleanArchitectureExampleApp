@@ -4,11 +4,11 @@ import android.os.Bundle
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.savedstate.SavedStateRegistryOwner
 import com.acoria.cleanarchtictureexampleapp.nature.PlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.buildNature.BuildNatureViewModel
 
+@Suppress("UNCHECKED_CAST")
 class ViewModelFactory constructor(
     private val plantRepository: PlantRepository,
     owner: SavedStateRegistryOwner,
@@ -28,12 +28,3 @@ class ViewModelFactory constructor(
         }
     } as T
 }
-
-//class ViewModelFactory (
-//    private val plantRepository: PlantRepository
-//): ViewModelProvider.Factory {
-//
-//    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-//        return BuildNatureViewModel(plantRepository) as T
-//    }
-//}
