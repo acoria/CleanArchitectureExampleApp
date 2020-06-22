@@ -11,16 +11,20 @@ import androidx.core.content.ContextCompat.getDrawable
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.acoria.cleanarchtictureexampleapp.R
 import com.acoria.cleanarchtictureexampleapp.getViewModelFactory
+import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.fragment_build_nature.*
 import timber.log.Timber
 
 class BuildNatureFragment : Fragment() {
 
+    private lateinit var favoriteRecyclerViewAdapter: FavoritesAdapter
     private val viewModel by viewModels<BuildNatureViewModel> { getViewModelFactory() }
+    private lateinit var viewLinearLayoutManager: RecyclerView.LayoutManager
 
 //    private val spinner: CircularProgressDrawable by lazy {
 //        val circularProgressDrawable = CircularProgressDrawable(requireContext())
@@ -57,6 +61,13 @@ class BuildNatureFragment : Fragment() {
             }
             eventHandled
         })
+
+        viewLinearLayoutManager = LinearLayoutManager(this.context)
+        favoriteRecyclerViewAdapter = FavoritesAdapter(mutableListOf<IPlant>())
+        recyclerview_favorites.apply {
+            layoutManager = viewLinearLayoutManager
+            adapter = favoriteRecyclerViewAdapter
+        }
     }
 
 
@@ -102,5 +113,7 @@ class BuildNatureFragment : Fragment() {
 //                    .placeholder(spinner) shows the placeholder when the image is removed
                     .into(img_search_result)
             } ?: Glide.with(this).clear(img_search_result)
+
+        favoriteRecyclerViewAdapter.updateData(viewState.favoritesAdapterList)
     }
 }

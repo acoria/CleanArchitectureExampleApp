@@ -9,7 +9,7 @@ data class NatureViewState(
     val searchedPlantMaxHeight: String = "",
     val searchedPlantReference: IPlant? = null,
     val searchedImage: String = "",
-    val adapterList: List<IPlant> = emptyList()
+    val favoritesAdapterList: List<IPlant> = emptyList()
 )
 
 //Action that is fire and forget: a one time event that does not keep state

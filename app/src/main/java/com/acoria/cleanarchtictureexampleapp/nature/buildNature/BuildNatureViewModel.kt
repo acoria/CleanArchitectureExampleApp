@@ -56,7 +56,7 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
             return
         }
 
-        val adapterList = currentViewState.adapterList
+        val adapterList = currentViewState.favoritesAdapterList
 
         val result: Lce<NatureResult> = if (!adapterList.contains(plant)) {
             //hand over the result so it can be added
@@ -144,9 +144,9 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
                         result.content.newFavoritePlant
                             ?.let {
                                 val newAdapterList: MutableList<IPlant> =
-                                    currentViewState.adapterList.toMutableList()
+                                    currentViewState.favoritesAdapterList.toMutableList()
                                 newAdapterList.add(it)
-                                currentViewState.copy(adapterList = newAdapterList)
+                                currentViewState.copy(favoritesAdapterList = newAdapterList)
                             } ?: currentViewState.copy()
                     }
                     is NatureResult.ToastResult -> {

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Build Nature - a Clean Architecture Example App</string>
+    <string name="favorites">Favorites:</string>
 </resources>
