@@ -1,10 +1,12 @@
 package com.acoria.cleanarchtictureexampleapp.nature.buildNature
 
 import android.os.Bundle
+import android.text.Editable
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat.getDrawable
@@ -15,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.acoria.cleanarchtictureexampleapp.R
 import com.acoria.cleanarchtictureexampleapp.getViewModelFactory
+import com.acoria.cleanarchtictureexampleapp.littleHelper.growShrink
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.fragment_build_nature.*
@@ -51,11 +54,14 @@ class BuildNatureFragment : Fragment() {
         btn_search.setOnClickListener {
             triggerSearchEvent(txt_search.text)
         }
-        btn_add_favorite.setOnClickListener { viewModel.onEvent(NatureViewEvent.AddPlantToFavoritesEvent) }
+        btn_add_favorite.setOnClickListener {
+            img_search_result.growShrink()
+            viewModel.onEvent(NatureViewEvent.AddPlantToFavoritesEvent)
+        }
 
         txt_search.setOnEditorActionListener(TextView.OnEditorActionListener { searchTextView, _, event ->
             var eventHandled = false
-            if(event.keyCode == KeyEvent.KEYCODE_ENTER){
+            if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
                 triggerSearchEvent(searchTextView.text)
                 eventHandled = true
             }
@@ -63,7 +69,8 @@ class BuildNatureFragment : Fragment() {
         })
 
         viewLinearLayoutManager = LinearLayoutManager(this.context)
-        favoriteRecyclerViewAdapter = FavoritesAdapter(mutableListOf<IPlant>())
+        favoriteRecyclerViewAdapter =
+            FavoritesAdapter { viewModel.onEvent(NatureViewEvent.DeletePlantFromFavorites(it)) }
         recyclerview_favorites.apply {
             layoutManager = viewLinearLayoutManager
             adapter = favoriteRecyclerViewAdapter
@@ -89,6 +96,13 @@ class BuildNatureFragment : Fragment() {
             is NatureViewEffect.ShowSnackbar -> {
                 //TODO: show snackbar
             }
+            is NatureViewEffect.DeletedFromFavoritesEffect -> {
+                Toast.makeText(
+                    requireContext(),
+                    "${viewEffect.plant.name} deleted",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
             is NatureViewEffect.ShowToast -> {
                 Toast.makeText(requireContext(), viewEffect.message, Toast.LENGTH_SHORT).show()
             }
@@ -104,6 +118,8 @@ class BuildNatureFragment : Fragment() {
             "No result found.."
         }
 
+//        (txt_search as EditText).setText(viewState.searchBoxText)
+
         viewState.searchedImage
             .takeIf { it.isNotBlank() }
             ?.let {
@@ -114,6 +130,6 @@ class BuildNatureFragment : Fragment() {
                     .into(img_search_result)
             } ?: Glide.with(this).clear(img_search_result)
 
-        favoriteRecyclerViewAdapter.updateData(viewState.favoritesAdapterList)
+        favoriteRecyclerViewAdapter.submitList(viewState.favoritesAdapterList.toList())
     }
 }

@@ -4,9 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.acoria.cleanarchtictureexampleapp.nature.*
+import com.acoria.cleanarchtictureexampleapp.nature.Lce
+import com.acoria.cleanarchtictureexampleapp.nature.PlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -46,6 +48,20 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
             is NatureViewEvent.SearchPlantEvent -> {
                 onSearchPlant(event.searchedPlantName)
             }
+            is NatureViewEvent.DeletePlantFromFavorites -> {
+                onDeletePlantFromFavorites(event.plant)
+            }
+        }
+    }
+
+    private fun onDeletePlantFromFavorites(plant: IPlant) {
+        val result = NatureResult.DeletePlantFromFavorites(plant)
+        resultToViewState(Lce.Loading(result))
+
+        viewModelScope.launch {
+            delay(2000)
+            resultToViewState(Lce.Content(result))
+            resultToViewEffect(Lce.Content(result))
         }
     }
 
@@ -56,22 +72,23 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
             return
         }
 
-        val adapterList = currentViewState.favoritesAdapterList
-
-        val result: Lce<NatureResult> = if (!adapterList.contains(plant)) {
-            //hand over the result so it can be added
-            Lce.Content(
-                NatureResult.AddToFavoriteListResult(
-                    plant
-                )
-            )
-        } else {
+//        val result = currentViewState.favoritesAdapterList.firstOrNull { it.key == plant }?.let {
+        val result = currentViewState.favoritesAdapterList.get(plant)?.let {
+            //already in the list, nothing to add
             Lce.Content(
                 NatureResult.AddToFavoriteListResult(
                     null
                 )
+            ) as Lce<NatureResult>
+
+        } ?:
+        //hand over the result so it can be added
+        Lce.Content(
+            NatureResult.AddToFavoriteListResult(
+                plant
             )
-        }
+        ) as Lce<NatureResult>
+
         resultToViewState(result)
         resultToViewEffect(result)
     }
@@ -81,6 +98,7 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
 
         if (searchPlantInRepoJob?.isActive == true) searchPlantInRepoJob?.cancel()
 
+        //this coroutine handles the execution within another thread
         searchPlantInRepoJob = viewModelScope.launch {
             val foundPlant = plantRepo.searchForPlant(searchedPlantName)
 //            if (foundPlant == null) {
@@ -106,12 +124,17 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
         if (result is Lce.Content && result.content is NatureResult.AddToFavoriteListResult) {
             _viewEffectLiveData.value =
                 NatureViewEffect.AddedToFavoritesEffect
-        }
-        if (result is Lce.Error && result.error is NatureResult.ToastResult) {
+        }else if (result is Lce.Content && result.content is NatureResult.DeletePlantFromFavorites) {
+            _viewEffectLiveData.value =
+                NatureViewEffect.DeletedFromFavoritesEffect(result.content.plant)
+        }else if (result is Lce.Error) {
+            Timber.d("##resultToEffect Lce.Error")
             _viewEffectLiveData.value =
                 NatureViewEffect.ShowToast(
-                    result.error.toastMessage
+                    "Error :("
                 )
+        }else{
+            Timber.d("##resultToEffect error -> not implemented")
         }
     }
 
@@ -123,14 +146,14 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
                 when (result.content) {
                     is NatureResult.SearchPlantResult -> {
                         val plant = result.content.plant
-                        if(plant != null) {
+                        if (plant != null) {
                             currentViewState.copy(
                                 searchedPlantName = plant.name,
                                 searchedPlantMaxHeight = plant.maxHeight.toString(),
                                 searchedPlantReference = plant,
                                 searchedImage = plant.imageUrl
                             )
-                        }else{
+                        } else {
                             currentViewState.copy(
                                 searchedPlantName = "",
                                 searchedPlantMaxHeight = "",
@@ -143,21 +166,35 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
                     is NatureResult.AddToFavoriteListResult -> {
                         result.content.newFavoritePlant
                             ?.let {
-                                val newAdapterList: MutableList<IPlant> =
-                                    currentViewState.favoritesAdapterList.toMutableList()
-                                newAdapterList.add(it)
+                                val newAdapterList =
+                                    currentViewState.favoritesAdapterList.toMutableMap()
+                                newAdapterList.put(it, PlantItemWrapper())
                                 currentViewState.copy(favoritesAdapterList = newAdapterList)
                             } ?: currentViewState.copy()
                     }
-                    is NatureResult.ToastResult -> {
-                        //TODO? - stupid that this has to be added as a branch :(
-                        currentViewState
+                    is NatureResult.DeletePlantFromFavorites -> {
+                        val newAdapterList =
+                            currentViewState.favoritesAdapterList.toMutableMap()
+
+//                        val index = newAdapterList.indexOf(result.content.plant)
+//                        newAdapterList.find { it.plant.equals(result.content.plantItemWrapper.plant) }
+                        newAdapterList.remove(result.content.plant)
+                        currentViewState.copy(favoritesAdapterList = newAdapterList)
                     }
                 }
             }
             is Lce.Loading -> {
                 //TODO: show loading
-                currentViewState
+                when (result.loadingContent) {
+                    is NatureResult.DeletePlantFromFavorites -> {
+                        val newAdapterList =
+                            currentViewState.favoritesAdapterList.toMutableMap()
+                        val plantToDelete = result.loadingContent.plant
+                        newAdapterList.replace(plantToDelete, PlantItemWrapper(true))
+                        currentViewState.copy(favoritesAdapterList = newAdapterList)
+                    }
+                    else -> currentViewState
+                }
             }
             is Lce.Error -> {
                 //TODO: error handling

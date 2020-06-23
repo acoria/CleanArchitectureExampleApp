@@ -9,7 +9,7 @@ data class NatureViewState(
     val searchedPlantMaxHeight: String = "",
     val searchedPlantReference: IPlant? = null,
     val searchedImage: String = "",
-    val favoritesAdapterList: List<IPlant> = emptyList()
+    val favoritesAdapterList: Map<IPlant, IPlantItemWrapper> = emptyMap()
 )
 
 //Action that is fire and forget: a one time event that does not keep state
@@ -20,17 +20,19 @@ sealed class NatureViewEffect {
 
     //or more specific:
     object AddedToFavoritesEffect : NatureViewEffect()
+    data class DeletedFromFavoritesEffect(val plant: IPlant) :  NatureViewEffect()
 }
 
 //all events/actions that a user can perform on the view
 sealed class NatureViewEvent {
-    //data class for parameters
+    //data class for parameters, object for no parameters
     data class SearchPlantEvent(val searchedPlantName: String = "") : NatureViewEvent()
+    data class DeletePlantFromFavorites(val plant : IPlant) : NatureViewEvent()
     object AddPlantToFavoritesEvent : NatureViewEvent()
 }
 
 sealed class NatureResult {
     data class SearchPlantResult(val plant: IPlant?) : NatureResult()
     data class AddToFavoriteListResult(val newFavoritePlant: IPlant?) : NatureResult()
-    data class ToastResult(val toastMessage: String) : NatureResult()
+    data class DeletePlantFromFavorites(val plant: IPlant) : NatureResult()
 }
