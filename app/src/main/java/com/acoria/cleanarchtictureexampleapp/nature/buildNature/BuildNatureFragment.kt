@@ -1,8 +1,9 @@
 package com.acoria.cleanarchtictureexampleapp.nature.buildNature
 
 import android.os.Bundle
-import android.text.Editable
 import android.view.KeyEvent
+import android.view.KeyEvent.ACTION_DOWN
+import android.view.KeyEvent.ACTION_UP
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.acoria.cleanarchtictureexampleapp.R
 import com.acoria.cleanarchtictureexampleapp.getViewModelFactory
 import com.acoria.cleanarchtictureexampleapp.littleHelper.growShrink
-import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.fragment_build_nature.*
 import timber.log.Timber
@@ -59,22 +59,30 @@ class BuildNatureFragment : Fragment() {
             viewModel.onEvent(NatureViewEvent.AddPlantToFavoritesEvent)
         }
 
+        setTextSearchActionListener()
+
+        viewLinearLayoutManager = LinearLayoutManager(this.context)
+        favoriteRecyclerViewAdapter =
+            FavoritesAdapter { viewModel.onEvent(NatureViewEvent.DeletePlantFromFavoritesEvent(it)) }
+        recyclerview_favorites.apply {
+            layoutManager = viewLinearLayoutManager
+            adapter = favoriteRecyclerViewAdapter
+        }
+    }
+
+    private fun setTextSearchActionListener() {
         txt_search.setOnEditorActionListener(TextView.OnEditorActionListener { searchTextView, _, event ->
             var eventHandled = false
-            if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
+            if (event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == ACTION_DOWN) {
                 triggerSearchEvent(searchTextView.text)
                 eventHandled = true
             }
             eventHandled
         })
+    }
 
-        viewLinearLayoutManager = LinearLayoutManager(this.context)
-        favoriteRecyclerViewAdapter =
-            FavoritesAdapter { viewModel.onEvent(NatureViewEvent.DeletePlantFromFavorites(it)) }
-        recyclerview_favorites.apply {
-            layoutManager = viewLinearLayoutManager
-            adapter = favoriteRecyclerViewAdapter
-        }
+    private fun removeTextSearchActionListener() {
+        txt_search.setOnEditorActionListener(null)
     }
 
 
@@ -118,7 +126,7 @@ class BuildNatureFragment : Fragment() {
             "No result found.."
         }
 
-//        (txt_search as EditText).setText(viewState.searchBoxText)
+        (txt_search as EditText).setText(viewState.searchBoxText)
 
         viewState.searchedImage
             .takeIf { it.isNotBlank() }

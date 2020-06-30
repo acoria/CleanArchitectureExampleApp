@@ -1,8 +1,8 @@
 package com.acoria.cleanarchtictureexampleapp
 
 import android.app.Application
-import com.acoria.cleanarchtictureexampleapp.BuildConfig
-import com.acoria.cleanarchtictureexampleapp.nature.PlantRepository
+import com.acoria.cleanarchtictureexampleapp.littleHelper.DispatcherProvider
+import com.acoria.cleanarchtictureexampleapp.nature.IPlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.ServiceLocator
 import timber.log.Timber
 
@@ -14,8 +14,11 @@ class CustomApplication : Application() {
  *
  */
     //TODO: Dependency Injection
-    val plantRepository: PlantRepository
+    val plantRepository: IPlantRepository
         get() = ServiceLocator.createPlantRepository()
+
+    val dispatcherProvider: DispatcherProvider
+        get() = ServiceLocator.createDispatcherProvider()
 
     override fun onCreate() {
         super.onCreate()

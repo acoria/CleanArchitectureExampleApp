@@ -4,5 +4,6 @@ import androidx.fragment.app.Fragment
 
 fun Fragment.getViewModelFactory() : ViewModelFactory{
     val repository = (requireContext().applicationContext as CustomApplication).plantRepository
-    return ViewModelFactory(repository, this)
+    val dispatcherProvider = (requireContext().applicationContext as CustomApplication).dispatcherProvider
+    return ViewModelFactory(repository, dispatcherProvider, this)
 }

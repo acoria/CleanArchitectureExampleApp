@@ -27,12 +27,12 @@ sealed class NatureViewEffect {
 sealed class NatureViewEvent {
     //data class for parameters, object for no parameters
     data class SearchPlantEvent(val searchedPlantName: String = "") : NatureViewEvent()
-    data class DeletePlantFromFavorites(val plant : IPlant) : NatureViewEvent()
+    data class DeletePlantFromFavoritesEvent(val plant : IPlant) : NatureViewEvent()
     object AddPlantToFavoritesEvent : NatureViewEvent()
 }
 
 sealed class NatureResult {
-    data class SearchPlantResult(val plant: IPlant?) : NatureResult()
+    data class SearchPlantResult(val plant: IPlant? = null) : NatureResult()
     data class AddToFavoriteListResult(val newFavoritePlant: IPlant?) : NatureResult()
     data class DeletePlantFromFavorites(val plant: IPlant) : NatureResult()
 }

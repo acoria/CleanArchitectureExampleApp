@@ -2,12 +2,13 @@ package com.acoria.cleanarchtictureexampleapp.nature
 
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import com.acoria.cleanarchtictureexampleapp.nature.model.Plant
+import kotlinx.coroutines.delay
 
-class PlantRepository(private val drawableHelper: Map<String, Int>) {
+class PlantRepository(private val drawableHelper: Map<String, Int>) : IPlantRepository{
 
     val favorites: List<IPlant> = emptyList()
 
-    suspend fun searchForPlant(plantName: String) : IPlant? {
+    override suspend fun searchForPlant(plantName: String) : IPlant? {
         //TODO - proper repository and more, such as DTOs
         var id = when(plantName){
             PLANT_NAME_SUNFLOWER -> 1
@@ -23,7 +24,7 @@ class PlantRepository(private val drawableHelper: Map<String, Int>) {
         if(height != 0) {
             foundPlant = Plant(id, plantName, height, drawableHelper[plantName].toString())
         }
-//        delay(2000)
+        delay(2000)
         return foundPlant
     }
 }

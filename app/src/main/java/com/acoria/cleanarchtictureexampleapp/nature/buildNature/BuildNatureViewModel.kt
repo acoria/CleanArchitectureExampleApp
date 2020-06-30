@@ -4,16 +4,18 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.acoria.cleanarchtictureexampleapp.littleHelper.DispatcherProvider
+import com.acoria.cleanarchtictureexampleapp.nature.IPlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.Lce
-import com.acoria.cleanarchtictureexampleapp.nature.PlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import timber.log.Timber
 
 
-class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel() {
+class BuildNatureViewModel(
+    private val plantRepo: IPlantRepository,
+    private val dispatcherProvider: DispatcherProvider
+) : ViewModel() {
 
     //--View State--
     private var _viewStateLiveData = MutableLiveData<NatureViewState>()
@@ -27,7 +29,9 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
         NatureViewState()
         set(value) {
             field = value
-            _viewStateLiveData.value = value
+            //use postValue instead of setter -> switches to the Main Thread automatically
+            _viewStateLiveData.postValue(value)
+//            _viewStateLiveData.value = value
         }
 
     //--View Effect--
@@ -36,7 +40,6 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
         get() = _viewEffectLiveData
 
     private var searchPlantInRepoJob: Job? = null
-
 
     fun onEvent(event: NatureViewEvent) {
         Timber.d("##event $event")
@@ -48,7 +51,7 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
             is NatureViewEvent.SearchPlantEvent -> {
                 onSearchPlant(event.searchedPlantName)
             }
-            is NatureViewEvent.DeletePlantFromFavorites -> {
+            is NatureViewEvent.DeletePlantFromFavoritesEvent -> {
                 onDeletePlantFromFavorites(event.plant)
             }
         }
@@ -72,7 +75,6 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
             return
         }
 
-//        val result = currentViewState.favoritesAdapterList.firstOrNull { it.key == plant }?.let {
         val result = currentViewState.favoritesAdapterList.get(plant)?.let {
             //already in the list, nothing to add
             Lce.Content(
@@ -94,16 +96,18 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
     }
 
     private fun onSearchPlant(searchedPlantName: String) {
-        resultToViewState(Lce.Loading())
+
+        resultToViewState(Lce.Loading(NatureResult.SearchPlantResult()))
 
         if (searchPlantInRepoJob?.isActive == true) searchPlantInRepoJob?.cancel()
 
-        //this coroutine handles the execution within another thread
-        searchPlantInRepoJob = viewModelScope.launch {
+        //this coroutine handles the execution within another thread (default is Main)
+        searchPlantInRepoJob = viewModelScope.launch(dispatcherProvider.IO) {
             val foundPlant = plantRepo.searchForPlant(searchedPlantName)
 //            if (foundPlant == null) {
 //                resultToViewEffect(Lce.Error(NatureResult.ToastResult("There is no result for '$searchedPlantName'")))
 //            }
+
             resultToViewState(
                 Lce.Content(
                     NatureResult.SearchPlantResult(
@@ -124,16 +128,16 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
         if (result is Lce.Content && result.content is NatureResult.AddToFavoriteListResult) {
             _viewEffectLiveData.value =
                 NatureViewEffect.AddedToFavoritesEffect
-        }else if (result is Lce.Content && result.content is NatureResult.DeletePlantFromFavorites) {
+        } else if (result is Lce.Content && result.content is NatureResult.DeletePlantFromFavorites) {
             _viewEffectLiveData.value =
                 NatureViewEffect.DeletedFromFavoritesEffect(result.content.plant)
-        }else if (result is Lce.Error) {
+        } else if (result is Lce.Error) {
             Timber.d("##resultToEffect Lce.Error")
             _viewEffectLiveData.value =
                 NatureViewEffect.ShowToast(
                     "Error :("
                 )
-        }else{
+        } else {
             Timber.d("##resultToEffect error -> not implemented")
         }
     }
@@ -148,6 +152,7 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
                         val plant = result.content.plant
                         if (plant != null) {
                             currentViewState.copy(
+                                searchBoxText = plant.name,
                                 searchedPlantName = plant.name,
                                 searchedPlantMaxHeight = plant.maxHeight.toString(),
                                 searchedPlantReference = plant,
@@ -192,6 +197,11 @@ class BuildNatureViewModel(private val plantRepo: PlantRepository) : ViewModel()
                         val plantToDelete = result.loadingContent.plant
                         newAdapterList.replace(plantToDelete, PlantItemWrapper(true))
                         currentViewState.copy(favoritesAdapterList = newAdapterList)
+                    }
+                    is NatureResult.SearchPlantResult -> {
+                        currentViewState.copy(
+                            searchedPlantName = "Searching..."
+                        )
                     }
                     else -> currentViewState
                 }

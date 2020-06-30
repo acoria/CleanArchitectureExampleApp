@@ -5,12 +5,14 @@ import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.savedstate.SavedStateRegistryOwner
-import com.acoria.cleanarchtictureexampleapp.nature.PlantRepository
+import com.acoria.cleanarchtictureexampleapp.littleHelper.DispatcherProvider
+import com.acoria.cleanarchtictureexampleapp.nature.IPlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.buildNature.BuildNatureViewModel
 
 @Suppress("UNCHECKED_CAST")
 class ViewModelFactory constructor(
-    private val plantRepository: PlantRepository,
+    private val plantRepository: IPlantRepository,
+    private val dispatcherProvider: DispatcherProvider,
     owner: SavedStateRegistryOwner,
     defaultArgs: Bundle? = null
 ) : AbstractSavedStateViewModelFactory(owner, defaultArgs) {
@@ -22,7 +24,7 @@ class ViewModelFactory constructor(
     ) = with(modelClass) {
         when {
             isAssignableFrom(BuildNatureViewModel::class.java) ->
-                BuildNatureViewModel(plantRepository)
+                BuildNatureViewModel(plantRepository, dispatcherProvider)
             else ->
                 throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
