@@ -1,14 +1,14 @@
 package com.acoria.cleanarchtictureexampleapp.nature.buildNature
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.acoria.cleanarchtictureexampleapp.littleHelper.DispatcherProvider
 import com.acoria.cleanarchtictureexampleapp.nature.IPlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.Lce
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import timber.log.Timber
 
 
@@ -33,6 +33,16 @@ class BuildNatureViewModel(
             _viewStateLiveData.postValue(value)
 //            _viewStateLiveData.value = value
         }
+
+    init {
+        viewModelScope.launch {
+        plantRepo.plantRequestCounterFlow()
+            .map { Lce.Content(NatureResult.NewPlantRequestFlowResult(it)) as Lce<NatureResult> }
+            .collect {
+                resultToViewState(it)
+            }
+        }
+    }
 
     //--View Effect--
     private val _viewEffectLiveData = MutableLiveData<NatureViewEffect>()
@@ -185,6 +195,9 @@ class BuildNatureViewModel(
 //                        newAdapterList.find { it.plant.equals(result.content.plantItemWrapper.plant) }
                         newAdapterList.remove(result.content.plant)
                         currentViewState.copy(favoritesAdapterList = newAdapterList)
+                    }
+                    is NatureResult.NewPlantRequestFlowResult -> {
+                        currentViewState.copy(userCounter = result.content.counter.toString())
                     }
                 }
             }

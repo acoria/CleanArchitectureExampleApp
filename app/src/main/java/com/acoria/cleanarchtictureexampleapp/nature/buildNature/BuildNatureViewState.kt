@@ -9,7 +9,8 @@ data class NatureViewState(
     val searchedPlantMaxHeight: String = "",
     val searchedPlantReference: IPlant? = null,
     val searchedImage: String = "",
-    val favoritesAdapterList: Map<IPlant, IPlantItemWrapper> = emptyMap()
+    val favoritesAdapterList: Map<IPlant, IPlantItemWrapper> = emptyMap(),
+    val userCounter: String = "0"
 )
 
 //Action that is fire and forget: a one time event that does not keep state
@@ -35,4 +36,5 @@ sealed class NatureResult {
     data class SearchPlantResult(val plant: IPlant? = null) : NatureResult()
     data class AddToFavoriteListResult(val newFavoritePlant: IPlant?) : NatureResult()
     data class DeletePlantFromFavorites(val plant: IPlant) : NatureResult()
+    data class NewPlantRequestFlowResult(val counter: Int) : NatureResult()
 }

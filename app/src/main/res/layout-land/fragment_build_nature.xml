@@ -66,5 +66,17 @@
         app:layout_constraintWidth_percent="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
-
+    <TextView
+        android:id="@+id/lbl_plant_request_counter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toStartOf="@id/txt_plant_request_counter"
+        app:layout_constraintBottom_toBottomOf="@id/txt_plant_request_counter"
+        android:text="@string/userCounter"/>
+    <TextView
+        android:id="@+id/txt_plant_request_counter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/recyclerview_favorites"
+        app:layout_constraintEnd_toEndOf="@id/recyclerview_favorites"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

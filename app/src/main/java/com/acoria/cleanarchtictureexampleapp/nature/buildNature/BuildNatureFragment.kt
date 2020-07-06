@@ -126,12 +126,14 @@ class BuildNatureFragment : Fragment() {
             "No result found.."
         }
 
-        (txt_search as EditText).setText(viewState.searchBoxText)
+//        (txt_search as EditText).setText(viewState.searchBoxText)
 
+        txt_plant_request_counter.text = viewState.userCounter
+
+        //TODO: how to distinguish between drawable and url? & dont refresh for every viewState
         viewState.searchedImage
             .takeIf { it.isNotBlank() }
             ?.let {
-                //TODO: how to distinguish between drawable and url?
                 Glide.with(this)
                     .load(getDrawable(requireContext(), viewState.searchedImage.toInt()))
 //                    .placeholder(spinner) shows the placeholder when the image is removed
