@@ -58,9 +58,11 @@ dependencies {
 
     implementation "com.jakewharton.timber:timber:4.7.1"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.0-alpha05"
     implementation "androidx.fragment:fragment-ktx:1.3.0-alpha06"
+    // activity, fragment scopes
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.3.0-alpha05"
+    // view model scopes
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.0-alpha05"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.3.0-alpha05"
 
     implementation 'com.github.bumptech.glide:glide:4.11.0'

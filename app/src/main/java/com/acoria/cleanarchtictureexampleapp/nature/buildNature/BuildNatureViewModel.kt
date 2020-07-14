@@ -1,20 +1,28 @@
 package com.acoria.cleanarchtictureexampleapp.nature.buildNature
 
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.acoria.cleanarchtictureexampleapp.littleHelper.DispatcherProvider
+import com.acoria.cleanarchtictureexampleapp.mvi.IResult
+import com.acoria.cleanarchtictureexampleapp.mvi.IStateReducer
+import com.acoria.cleanarchtictureexampleapp.mvi.IViewState
 import com.acoria.cleanarchtictureexampleapp.nature.IPlantRepository
 import com.acoria.cleanarchtictureexampleapp.nature.Lce
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 
 class BuildNatureViewModel(
     private val plantRepo: IPlantRepository,
-    private val dispatcherProvider: DispatcherProvider
+    private val dispatcherProvider: DispatcherProvider,
+    private val stateReducer : IStateReducer<NatureViewState, NatureResult> = BuildNatureStateReducer()
 ) : ViewModel() {
 
     //--View State--
@@ -36,11 +44,11 @@ class BuildNatureViewModel(
 
     init {
         viewModelScope.launch {
-        plantRepo.plantRequestCounterFlow()
-            .map { Lce.Content(NatureResult.NewPlantRequestFlowResult(it)) as Lce<NatureResult> }
-            .collect {
-                resultToViewState(it)
-            }
+            plantRepo.plantRequestCounterFlow()
+                .map { Lce.Content(NatureResult.NewPlantRequestFlowResult(it)) as Lce<NatureResult> }
+                .collect {
+                    resultToViewState(it)
+                }
         }
     }
 
@@ -154,77 +162,7 @@ class BuildNatureViewModel(
 
     private fun resultToViewState(result: Lce<NatureResult>) {
         Timber.d("##resultToViewState $result")
-
-        currentViewState = when (result) {
-            is Lce.Content -> {
-                when (result.content) {
-                    is NatureResult.SearchPlantResult -> {
-                        val plant = result.content.plant
-                        if (plant != null) {
-                            currentViewState.copy(
-                                searchBoxText = plant.name,
-                                searchedPlantName = plant.name,
-                                searchedPlantMaxHeight = plant.maxHeight.toString(),
-                                searchedPlantReference = plant,
-                                searchedImage = plant.imageUrl
-                            )
-                        } else {
-                            currentViewState.copy(
-                                searchedPlantName = "",
-                                searchedPlantMaxHeight = "",
-                                searchedPlantReference = null,
-                                searchedImage = ""
-                            )
-                        }
-
-                    }
-                    is NatureResult.AddToFavoriteListResult -> {
-                        result.content.newFavoritePlant
-                            ?.let {
-                                val newAdapterList =
-                                    currentViewState.favoritesAdapterList.toMutableMap()
-                                newAdapterList.put(it, PlantItemWrapper())
-                                currentViewState.copy(favoritesAdapterList = newAdapterList)
-                            } ?: currentViewState.copy()
-                    }
-                    is NatureResult.DeletePlantFromFavorites -> {
-                        val newAdapterList =
-                            currentViewState.favoritesAdapterList.toMutableMap()
-
-//                        val index = newAdapterList.indexOf(result.content.plant)
-//                        newAdapterList.find { it.plant.equals(result.content.plantItemWrapper.plant) }
-                        newAdapterList.remove(result.content.plant)
-                        currentViewState.copy(favoritesAdapterList = newAdapterList)
-                    }
-                    is NatureResult.NewPlantRequestFlowResult -> {
-                        currentViewState.copy(userCounter = result.content.counter.toString())
-                    }
-                }
-            }
-            is Lce.Loading -> {
-                //TODO: show loading
-                when (result.loadingContent) {
-                    is NatureResult.DeletePlantFromFavorites -> {
-                        val newAdapterList =
-                            currentViewState.favoritesAdapterList.toMutableMap()
-                        val plantToDelete = result.loadingContent.plant
-                        newAdapterList.replace(plantToDelete, PlantItemWrapper(true))
-                        currentViewState.copy(favoritesAdapterList = newAdapterList)
-                    }
-                    is NatureResult.SearchPlantResult -> {
-                        currentViewState.copy(
-                            searchedPlantName = "Searching..."
-                        )
-                    }
-                    else -> currentViewState
-                }
-            }
-            is Lce.Error -> {
-                //TODO: error handling
-                currentViewState
-            }
-        }
-
+        currentViewState = stateReducer.reduce(currentViewState, result)
     }
 
     override fun onCleared() {
