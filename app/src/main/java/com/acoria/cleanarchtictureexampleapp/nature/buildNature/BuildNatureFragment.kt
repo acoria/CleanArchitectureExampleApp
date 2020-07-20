@@ -56,14 +56,14 @@ class BuildNatureFragment : Fragment() {
         }
         btn_add_favorite.setOnClickListener {
             img_search_result.growShrink()
-            viewModel.onEvent(NatureViewEvent.AddPlantToFavoritesEvent)
+            viewModel.onEvent(NatureStateFlow.Event.AddPlantToFavoritesEvent)
         }
 
         setTextSearchActionListener()
 
         viewLinearLayoutManager = LinearLayoutManager(this.context)
         favoriteRecyclerViewAdapter =
-            FavoritesAdapter { viewModel.onEvent(NatureViewEvent.DeletePlantFromFavoritesEvent(it)) }
+            FavoritesAdapter { viewModel.onEvent(NatureStateFlow.Event.DeletePlantFromFavoritesEvent(it)) }
         recyclerview_favorites.apply {
             layoutManager = viewLinearLayoutManager
             adapter = favoriteRecyclerViewAdapter
@@ -88,36 +88,36 @@ class BuildNatureFragment : Fragment() {
 
     private fun triggerSearchEvent(searchText: CharSequence) {
         viewModel.onEvent(
-            NatureViewEvent.SearchPlantEvent(
+            NatureStateFlow.Event.SearchPlantEvent(
                 searchText.toString()
             )
         )
     }
 
-    private fun onEffect(viewEffect: NatureViewEffect) {
+    private fun onEffect(viewEffect: NatureStateFlow.Effect) {
         Timber.d("##viewEffect: $viewEffect")
 
         when (viewEffect) {
-            is NatureViewEffect.AddedToFavoritesEffect -> {
+            is NatureStateFlow.Effect.AddedToFavoritesEffect -> {
                 Toast.makeText(requireContext(), "added to favorites", Toast.LENGTH_SHORT).show()
             }
-            is NatureViewEffect.ShowSnackbar -> {
+            is NatureStateFlow.Effect.ShowSnackbar -> {
                 //TODO: show snackbar
             }
-            is NatureViewEffect.DeletedFromFavoritesEffect -> {
+            is NatureStateFlow.Effect.DeletedFromFavoritesEffect -> {
                 Toast.makeText(
                     requireContext(),
                     "${viewEffect.plant.name} deleted",
                     Toast.LENGTH_LONG
                 ).show()
             }
-            is NatureViewEffect.ShowToast -> {
+            is NatureStateFlow.Effect.ShowToast -> {
                 Toast.makeText(requireContext(), viewEffect.message, Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun render(viewState: NatureViewState) {
+    private fun render(viewState: NatureStateFlow.ViewState) {
         Timber.d("##viewState: $viewState")
 
         txt_search_result.text = if (viewState.searchedPlantName != "") {

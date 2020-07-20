@@ -5,11 +5,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.acoria.cleanarchtictureexampleapp.littleHelper.DispatcherProvider
-import com.acoria.cleanarchtictureexampleapp.mvi.IResult
 import com.acoria.cleanarchtictureexampleapp.mvi.IStateReducer
+import com.acoria.cleanarchtictureexampleapp.mvi.IResult
 import com.acoria.cleanarchtictureexampleapp.mvi.IViewState
 import com.acoria.cleanarchtictureexampleapp.nature.IPlantRepository
-import com.acoria.cleanarchtictureexampleapp.nature.Lce
+import com.acoria.cleanarchtictureexampleapp.core.Lce
+import com.acoria.cleanarchtictureexampleapp.nature.buildNature.viewState.ViewStateReducer
 import com.acoria.cleanarchtictureexampleapp.nature.model.IPlant
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -22,19 +23,19 @@ import timber.log.Timber
 class BuildNatureViewModel(
     private val plantRepo: IPlantRepository,
     private val dispatcherProvider: DispatcherProvider,
-    private val stateReducer : IStateReducer<NatureViewState, NatureResult> = BuildNatureStateReducer()
+    private val stateReducer : IStateReducer = ViewStateReducer()
 ) : ViewModel() {
 
     //--View State--
-    private var _viewStateLiveData = MutableLiveData<NatureViewState>()
+    private var _viewStateLiveData = MutableLiveData<NatureStateFlow.ViewState>()
 
     //separate property so it can be exposed as immutable
-    val viewState: LiveData<NatureViewState>
+    val viewState: LiveData<NatureStateFlow.ViewState>
         get() = _viewStateLiveData
 
     //store view state so it can be easily copied
     private var currentViewState =
-        NatureViewState()
+        NatureStateFlow.ViewState()
         set(value) {
             field = value
             //use postValue instead of setter -> switches to the Main Thread automatically
@@ -43,40 +44,40 @@ class BuildNatureViewModel(
         }
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcherProvider.IO) {
             plantRepo.plantRequestCounterFlow()
-                .map { Lce.Content(NatureResult.NewPlantRequestFlowResult(it)) as Lce<NatureResult> }
+                .map { Lce.Content(NatureStateFlow.Result.NewPlantRequestFlowResult(it)) }
                 .collect {
-                    resultToViewState(it)
+                    resultToViewState(it as Lce<NatureStateFlow.Result>)
                 }
         }
     }
 
     //--View Effect--
-    private val _viewEffectLiveData = MutableLiveData<NatureViewEffect>()
-    val viewEffects: LiveData<NatureViewEffect>
+    private val _viewEffectLiveData = MutableLiveData<NatureStateFlow.Effect>()
+    val viewEffects: LiveData<NatureStateFlow.Effect>
         get() = _viewEffectLiveData
 
     private var searchPlantInRepoJob: Job? = null
 
-    fun onEvent(event: NatureViewEvent) {
+    fun onEvent(event: NatureStateFlow.Event) {
         Timber.d("##event $event")
 
         when (event) {
-            is NatureViewEvent.AddPlantToFavoritesEvent -> {
+            is NatureStateFlow.Event.AddPlantToFavoritesEvent -> {
                 onAddPlantToFavorites()
             }
-            is NatureViewEvent.SearchPlantEvent -> {
+            is NatureStateFlow.Event.SearchPlantEvent -> {
                 onSearchPlant(event.searchedPlantName)
             }
-            is NatureViewEvent.DeletePlantFromFavoritesEvent -> {
+            is NatureStateFlow.Event.DeletePlantFromFavoritesEvent -> {
                 onDeletePlantFromFavorites(event.plant)
             }
         }
     }
 
     private fun onDeletePlantFromFavorites(plant: IPlant) {
-        val result = NatureResult.DeletePlantFromFavorites(plant)
+        val result = NatureStateFlow.Result.DeletePlantFromFavoritesResult(plant)
         resultToViewState(Lce.Loading(result))
 
         viewModelScope.launch {
@@ -96,18 +97,18 @@ class BuildNatureViewModel(
         val result = currentViewState.favoritesAdapterList.get(plant)?.let {
             //already in the list, nothing to add
             Lce.Content(
-                NatureResult.AddToFavoriteListResult(
+                NatureStateFlow.Result.AddToFavoriteListResult(
                     null
                 )
-            ) as Lce<NatureResult>
+            )
 
         } ?:
         //hand over the result so it can be added
         Lce.Content(
-            NatureResult.AddToFavoriteListResult(
+            NatureStateFlow.Result.AddToFavoriteListResult(
                 plant
             )
-        ) as Lce<NatureResult>
+        )
 
         resultToViewState(result)
         resultToViewEffect(result)
@@ -115,7 +116,7 @@ class BuildNatureViewModel(
 
     private fun onSearchPlant(searchedPlantName: String) {
 
-        resultToViewState(Lce.Loading(NatureResult.SearchPlantResult()))
+        resultToViewState(Lce.Loading(NatureStateFlow.Result.SearchPlantResult()))
 
         if (searchPlantInRepoJob?.isActive == true) searchPlantInRepoJob?.cancel()
 
@@ -128,7 +129,7 @@ class BuildNatureViewModel(
 
             resultToViewState(
                 Lce.Content(
-                    NatureResult.SearchPlantResult(
+                    NatureStateFlow.Result.SearchPlantResult(
                         foundPlant
                     )
                 )
@@ -140,19 +141,19 @@ class BuildNatureViewModel(
         resultToViewState(Lce.Loading())
     }
 
-    private fun resultToViewEffect(result: Lce<NatureResult>) {
+    private fun resultToViewEffect(result: Lce<NatureStateFlow.Result>) {
         Timber.d("##resultToEffect $result")
 
-        if (result is Lce.Content && result.content is NatureResult.AddToFavoriteListResult) {
+        if (result is Lce.Content && result.content is NatureStateFlow.Result.AddToFavoriteListResult) {
             _viewEffectLiveData.value =
-                NatureViewEffect.AddedToFavoritesEffect
-        } else if (result is Lce.Content && result.content is NatureResult.DeletePlantFromFavorites) {
+                NatureStateFlow.Effect.AddedToFavoritesEffect
+        } else if (result is Lce.Content && result.content is NatureStateFlow.Result.DeletePlantFromFavoritesResult) {
             _viewEffectLiveData.value =
-                NatureViewEffect.DeletedFromFavoritesEffect(result.content.plant)
+                NatureStateFlow.Effect.DeletedFromFavoritesEffect(result.content.plant)
         } else if (result is Lce.Error) {
             Timber.d("##resultToEffect Lce.Error")
             _viewEffectLiveData.value =
-                NatureViewEffect.ShowToast(
+                NatureStateFlow.Effect.ShowToast(
                     "Error :("
                 )
         } else {
@@ -160,9 +161,9 @@ class BuildNatureViewModel(
         }
     }
 
-    private fun resultToViewState(result: Lce<NatureResult>) {
-        Timber.d("##resultToViewState $result")
-        currentViewState = stateReducer.reduce(currentViewState, result)
+    private fun resultToViewState(lceResult: Lce<NatureStateFlow.Result>) {
+        Timber.d("##resultToViewState $lceResult")
+        currentViewState = stateReducer.reduce(currentViewState as IViewState, lceResult as Lce<IResult>) as NatureStateFlow.ViewState
     }
 
     override fun onCleared() {
